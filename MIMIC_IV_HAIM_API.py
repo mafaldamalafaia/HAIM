@@ -161,12 +161,12 @@ class Patient_ICU(object):
         labevents, microbiologyevents, poe, poe_detail,\
         prescriptions, procedures_icd, services, procedureevents,\
         outputevents, inputevents, icustays, datetimeevents,\
-        chartevents, cxr, imcxr, noteevents, dsnotes, ecgnotes, \
-        echonotes, radnotes):
+        cxr, imcxr):#, chartevents, noteevents, dsnotes, ecgnotes, \
+        #echonotes, radnotes):
         
         ## CORE
         self.admissions = admissions
-        self.demographics = demographics
+        self.demographics = demographics # form core.csv
         self.transfers = transfers
         self.core = core
         ## HOSP
@@ -188,16 +188,16 @@ class Patient_ICU(object):
         self.inputevents = inputevents
         self.icustays = icustays
         self.datetimeevents = datetimeevents
-        self.chartevents = chartevents
+        #self.chartevents = chartevents
         ## CXR
         self.cxr = cxr
         self.imcxr = imcxr
         ## NOTES
-        self.noteevents = noteevents
-        self.dsnotes = dsnotes
-        self.ecgnotes = ecgnotes
-        self.echonotes = echonotes
-        self.radnotes = radnotes
+        #self.noteevents = noteevents
+        #self.dsnotes = dsnotes
+        #self.ecgnotes = ecgnotes
+        #self.echonotes = echonotes
+        #self.radnotes = radnotes
 
 
 # GET FULL MIMIC IV PATIENT RECORD USING DATABASE KEYS
@@ -271,10 +271,18 @@ def get_patient_icustay(key_subject_id, key_hadm_id, key_stay_id):
     ###-> Get images of that timebound patient
     f_df_imcxr = []
     for img_idx, img_row in f_df_cxr.iterrows():
-        img_path = core_mimiciv_imgcxr_path + str(img_row['Img_Folder']) + '/' + str(img_row['Img_Filename'])
+        img_folder = 'p' + str(img_row['subject_id'])[:2]
+        img_id = 'p' + str(int(img_row['subject_id']))
+        img_study = 's' + str(int(img_row['study_id']))
+        img_name = str(img_row['dicom_id']) + '.jpg'
+        img_path = core_mimiciv_imgcxr_path + 'files/' + img_folder + '/' + img_id + '/' + img_study + '/' + img_name
+        #img_path = core_mimiciv_imgcxr_path + str(img_row['Img_Folder']) + '/' + str(img_row['Img_Filename'])
         img_cxr_shape = [224, 224]
-        img_cxr = cv2.resize(cv2.imread(img_path, cv2.IMREAD_GRAYSCALE), (img_cxr_shape[0], img_cxr_shape[1]))
-        f_df_imcxr.append(np.array(img_cxr))
+        img_load = cv2.imread(img_path, cv2.IMREAD_GRAYSCALE)
+        if img_load is not None and img_load.size != 0:
+            img_cxr = cv2.resize(img_load, (img_cxr_shape[0], img_cxr_shape[1]))
+            f_df_imcxr.append(np.array(img_cxr))
+        else: print("IMAGE IS EMPTY in patient ", img_path)
       
     ##-> NOTES
     f_df_noteevents = df_noteevents[(df_noteevents.subject_id == key_subject_id) & (df_noteevents.hadm_id == key_hadm_id)]
@@ -334,8 +342,8 @@ def get_patient_icustay(key_subject_id, key_hadm_id, key_stay_id):
                                   labevents, microbiologyevents, poe, poe_detail, \
                                   prescriptions, procedures_icd, services, procedureevents, \
                                   outputevents, inputevents, icustays, datetimeevents, \
-                                  chartevents, cxr, imcxr, noteevents, dsnotes, ecgnotes, \
-                                  echonotes, radnotes)
+                                  cxr, imcxr)#, chartevents, noteevents, dsnotes, ecgnotes, \
+                                  #echonotes, radnotes)
 
     return Patient_ICUstay
 
@@ -394,12 +402,12 @@ def get_timebound_patient_icustay(Patient_ICUstay, start_hr = None, end_hr = Non
     Patient_ICUstay.microbiologyevents['deltacharttime'] = Patient_ICUstay.microbiologyevents.apply(lambda x: date_diff_hrs(x['charttime'],admittime) if not x.empty else None, axis=1)
     Patient_ICUstay.outputevents['deltacharttime'] = Patient_ICUstay.outputevents.apply(lambda x: date_diff_hrs(x['charttime'],admittime) if not x.empty else None, axis=1)
     Patient_ICUstay.datetimeevents['deltacharttime'] = Patient_ICUstay.datetimeevents.apply(lambda x: date_diff_hrs(x['charttime'],admittime) if not x.empty else None, axis=1)
-    Patient_ICUstay.chartevents['deltacharttime'] = Patient_ICUstay.chartevents.apply(lambda x: date_diff_hrs(x['charttime'],admittime) if not x.empty else None, axis=1)
-    Patient_ICUstay.noteevents['deltacharttime'] = Patient_ICUstay.noteevents.apply(lambda x: date_diff_hrs(x['charttime'],admittime) if not x.empty else None, axis=1)
-    Patient_ICUstay.dsnotes['deltacharttime'] = Patient_ICUstay.dsnotes.apply(lambda x: date_diff_hrs(x['charttime'],admittime) if not x.empty else None, axis=1)
-    Patient_ICUstay.ecgnotes['deltacharttime'] = Patient_ICUstay.ecgnotes.apply(lambda x: date_diff_hrs(x['charttime'],admittime) if not x.empty else None, axis=1)
-    Patient_ICUstay.echonotes['deltacharttime'] = Patient_ICUstay.echonotes.apply(lambda x: date_diff_hrs(x['charttime'],admittime) if not x.empty else None, axis=1)
-    Patient_ICUstay.radnotes['deltacharttime'] = Patient_ICUstay.radnotes.apply(lambda x: date_diff_hrs(x['charttime'],admittime) if not x.empty else None, axis=1)
+    #Patient_ICUstay.chartevents['deltacharttime'] = Patient_ICUstay.chartevents.apply(lambda x: date_diff_hrs(x['charttime'],admittime) if not x.empty else None, axis=1)
+    #Patient_ICUstay.noteevents['deltacharttime'] = Patient_ICUstay.noteevents.apply(lambda x: date_diff_hrs(x['charttime'],admittime) if not x.empty else None, axis=1)
+    #Patient_ICUstay.dsnotes['deltacharttime'] = Patient_ICUstay.dsnotes.apply(lambda x: date_diff_hrs(x['charttime'],admittime) if not x.empty else None, axis=1)
+    #Patient_ICUstay.ecgnotes['deltacharttime'] = Patient_ICUstay.ecgnotes.apply(lambda x: date_diff_hrs(x['charttime'],admittime) if not x.empty else None, axis=1)
+    #Patient_ICUstay.echonotes['deltacharttime'] = Patient_ICUstay.echonotes.apply(lambda x: date_diff_hrs(x['charttime'],admittime) if not x.empty else None, axis=1)
+    #Patient_ICUstay.radnotes['deltacharttime'] = Patient_ICUstay.radnotes.apply(lambda x: date_diff_hrs(x['charttime'],admittime) if not x.empty else None, axis=1)
     
     # Re-calculate times of CXR database
     Patient_ICUstay.cxr['StudyDateForm'] = pd.to_datetime(Patient_ICUstay.cxr['StudyDate'], format='%Y%m%d')
@@ -416,15 +424,15 @@ def get_timebound_patient_icustay(Patient_ICUstay, start_hr = None, end_hr = Non
         Patient_ICUstay.microbiologyevents = Patient_ICUstay.microbiologyevents[(Patient_ICUstay.microbiologyevents.deltacharttime >= start_hr) | pd.isnull(Patient_ICUstay.microbiologyevents.deltacharttime)]
         Patient_ICUstay.outputevents = Patient_ICUstay.outputevents[(Patient_ICUstay.outputevents.deltacharttime >= start_hr) | pd.isnull(Patient_ICUstay.outputevents.deltacharttime)]
         Patient_ICUstay.datetimeevents = Patient_ICUstay.datetimeevents[(Patient_ICUstay.datetimeevents.deltacharttime >= start_hr) | pd.isnull(Patient_ICUstay.datetimeevents.deltacharttime)]
-        Patient_ICUstay.chartevents = Patient_ICUstay.chartevents[(Patient_ICUstay.chartevents.deltacharttime >= start_hr) | pd.isnull(Patient_ICUstay.chartevents.deltacharttime)]
+        #Patient_ICUstay.chartevents = Patient_ICUstay.chartevents[(Patient_ICUstay.chartevents.deltacharttime >= start_hr) | pd.isnull(Patient_ICUstay.chartevents.deltacharttime)]
         Patient_ICUstay.cxr = Patient_ICUstay.cxr[(Patient_ICUstay.cxr.deltacharttime >= start_hr) | pd.isnull(Patient_ICUstay.cxr.deltacharttime)]
         Patient_ICUstay.imcxr = [Patient_ICUstay.imcxr[i] for i, x in enumerate((Patient_ICUstay.cxr.deltacharttime >= start_hr) | pd.isnull(Patient_ICUstay.cxr.deltacharttime)) if x]
         #Notes
-        Patient_ICUstay.noteevents = Patient_ICUstay.noteevents[(Patient_ICUstay.noteevents.deltacharttime >= start_hr) | pd.isnull(Patient_ICUstay.noteevents.deltacharttime)]
-        Patient_ICUstay.dsnotes = Patient_ICUstay.dsnotes[(Patient_ICUstay.dsnotes.deltacharttime >= start_hr) | pd.isnull(Patient_ICUstay.dsnotes.deltacharttime)]
-        Patient_ICUstay.ecgnotes = Patient_ICUstay.ecgnotes[(Patient_ICUstay.ecgnotes.deltacharttime >= start_hr) | pd.isnull(Patient_ICUstay.ecgnotes.deltacharttime)]
-        Patient_ICUstay.echonotes = Patient_ICUstay.echonotes[(Patient_ICUstay.echonotes.deltacharttime >= start_hr) | pd.isnull(Patient_ICUstay.echonotes.deltacharttime)]
-        Patient_ICUstay.radnotes = Patient_ICUstay.radnotes[(Patient_ICUstay.radnotes.deltacharttime >= start_hr) | pd.isnull(Patient_ICUstay.radnotes.deltacharttime)]
+        #Patient_ICUstay.noteevents = Patient_ICUstay.noteevents[(Patient_ICUstay.noteevents.deltacharttime >= start_hr) | pd.isnull(Patient_ICUstay.noteevents.deltacharttime)]
+        #Patient_ICUstay.dsnotes = Patient_ICUstay.dsnotes[(Patient_ICUstay.dsnotes.deltacharttime >= start_hr) | pd.isnull(Patient_ICUstay.dsnotes.deltacharttime)]
+        #Patient_ICUstay.ecgnotes = Patient_ICUstay.ecgnotes[(Patient_ICUstay.ecgnotes.deltacharttime >= start_hr) | pd.isnull(Patient_ICUstay.ecgnotes.deltacharttime)]
+        #Patient_ICUstay.echonotes = Patient_ICUstay.echonotes[(Patient_ICUstay.echonotes.deltacharttime >= start_hr) | pd.isnull(Patient_ICUstay.echonotes.deltacharttime)]
+        #Patient_ICUstay.radnotes = Patient_ICUstay.radnotes[(Patient_ICUstay.radnotes.deltacharttime >= start_hr) | pd.isnull(Patient_ICUstay.radnotes.deltacharttime)]
         
         
     if not (end_hr == None):
@@ -433,15 +441,15 @@ def get_timebound_patient_icustay(Patient_ICUstay, start_hr = None, end_hr = Non
         Patient_ICUstay.microbiologyevents = Patient_ICUstay.microbiologyevents[(Patient_ICUstay.microbiologyevents.deltacharttime <= end_hr) | pd.isnull(Patient_ICUstay.microbiologyevents.deltacharttime)]
         Patient_ICUstay.outputevents = Patient_ICUstay.outputevents[(Patient_ICUstay.outputevents.deltacharttime <= end_hr) | pd.isnull(Patient_ICUstay.outputevents.deltacharttime)]
         Patient_ICUstay.datetimeevents = Patient_ICUstay.datetimeevents[(Patient_ICUstay.datetimeevents.deltacharttime <= end_hr) | pd.isnull(Patient_ICUstay.datetimeevents.deltacharttime)]
-        Patient_ICUstay.chartevents = Patient_ICUstay.chartevents[(Patient_ICUstay.chartevents.deltacharttime <= end_hr) | pd.isnull(Patient_ICUstay.chartevents.deltacharttime)]
+        #Patient_ICUstay.chartevents = Patient_ICUstay.chartevents[(Patient_ICUstay.chartevents.deltacharttime <= end_hr) | pd.isnull(Patient_ICUstay.chartevents.deltacharttime)]
         Patient_ICUstay.cxr = Patient_ICUstay.cxr[(Patient_ICUstay.cxr.deltacharttime <= end_hr) | pd.isnull(Patient_ICUstay.cxr.deltacharttime)]
         Patient_ICUstay.imcxr = [Patient_ICUstay.imcxr[i] for i, x in enumerate((Patient_ICUstay.cxr.deltacharttime <= end_hr) | pd.isnull(Patient_ICUstay.cxr.deltacharttime)) if x]
         #Notes
-        Patient_ICUstay.noteevents = Patient_ICUstay.noteevents[(Patient_ICUstay.noteevents.deltacharttime <= end_hr) | pd.isnull(Patient_ICUstay.noteevents.deltacharttime)]
-        Patient_ICUstay.dsnotes = Patient_ICUstay.dsnotes[(Patient_ICUstay.dsnotes.deltacharttime <= end_hr) | pd.isnull(Patient_ICUstay.dsnotes.deltacharttime)]
-        Patient_ICUstay.ecgnotes = Patient_ICUstay.ecgnotes[(Patient_ICUstay.ecgnotes.deltacharttime <= end_hr) | pd.isnull(Patient_ICUstay.ecgnotes.deltacharttime)]
-        Patient_ICUstay.echonotes = Patient_ICUstay.echonotes[(Patient_ICUstay.echonotes.deltacharttime <= end_hr) | pd.isnull(Patient_ICUstay.echonotes.deltacharttime)]
-        Patient_ICUstay.radnotes = Patient_ICUstay.radnotes[(Patient_ICUstay.radnotes.deltacharttime <= end_hr) | pd.isnull(Patient_ICUstay.radnotes.deltacharttime)]
+        #Patient_ICUstay.noteevents = Patient_ICUstay.noteevents[(Patient_ICUstay.noteevents.deltacharttime <= end_hr) | pd.isnull(Patient_ICUstay.noteevents.deltacharttime)]
+        #Patient_ICUstay.dsnotes = Patient_ICUstay.dsnotes[(Patient_ICUstay.dsnotes.deltacharttime <= end_hr) | pd.isnull(Patient_ICUstay.dsnotes.deltacharttime)]
+        #Patient_ICUstay.ecgnotes = Patient_ICUstay.ecgnotes[(Patient_ICUstay.ecgnotes.deltacharttime <= end_hr) | pd.isnull(Patient_ICUstay.ecgnotes.deltacharttime)]
+        #Patient_ICUstay.echonotes = Patient_ICUstay.echonotes[(Patient_ICUstay.echonotes.deltacharttime <= end_hr) | pd.isnull(Patient_ICUstay.echonotes.deltacharttime)]
+        #Patient_ICUstay.radnotes = Patient_ICUstay.radnotes[(Patient_ICUstay.radnotes.deltacharttime <= end_hr) | pd.isnull(Patient_ICUstay.radnotes.deltacharttime)]
         
         # Filter CXR to match allowable patient stay
         Patient_ICUstay.cxr = Patient_ICUstay.cxr[(Patient_ICUstay.cxr.charttime <= dischtime)]
@@ -463,7 +471,7 @@ def load_haim_event_dictionaries(core_mimiciv_path):
     df_patientevents_categorylabels_dict = pd.DataFrame(columns = ['eventtype', 'category', 'label'])
   
     # Load dictionaries
-    df_d_items = pd.read_csv(core_mimiciv_path + 'icu/d_items.csv')
+    df_d_items = pd.read_csv(core_mimiciv_path + 'icu/d_items.csv.gz')
     df_d_labitems = pd.read_csv(core_mimiciv_path + 'hosp/d_labitems.csv')
     df_d_hcpcs = pd.read_csv(core_mimiciv_path + 'hosp/d_hcpcs.csv')
 
@@ -538,21 +546,21 @@ def is_haim_patient_keyword_match(patient, keywords, verbose = 0):
                         patient.inputevents,
                         patient.icustays,
                         patient.datetimeevents,
-                        patient.chartevents,
+                        #patient.chartevents,
                         ## CXR
                         patient.cxr,
                         patient.imcxr,
                         ## NOTES
-                        patient.noteevents,
-                        patient.dsnotes,
-                        patient.ecgnotes,
-                        patient.echonotes,
-                        patient.radnotes
+                        #patient.noteevents,
+                        #patient.dsnotes,
+                        #patient.ecgnotes,
+                        #patient.echonotes,
+                        #patient.radnotes
                         ]
 
     patient_dfs_dict = ['core', 'diagnoses_icd', 'drgcodes', 'emar', 'emar_detail', 'hcpcsevents', 'labevents', 'microbiologyevents', 'poe',
                         'poe_detail', 'prescriptions', 'procedures_icd', 'services', 'procedureevents', 'outputevents', 'inputevents', 'icustays',
-                        'datetimeevents', 'chartevents', 'cxr', 'imcxr', 'noteevents', 'dsnotes', 'ecgnotes', 'echonotes', 'radnotes']
+                        'datetimeevents', 'cxr', 'imcxr']#, 'chartevents', 'noteevents', 'dsnotes', 'ecgnotes', 'echonotes', 'radnotes']
   
     # Initialize query mask
     keyword_mask = np.zeros([len(patient_dfs_list), len(keywords)])
@@ -749,7 +757,9 @@ def get_demographic_embeddings(dt_patient, verbose=0):
     # base_embeddings = get_demographic_embeddings(dt_patient, df_haim_ids_core_info, verbose=2)
 
     # Retrieve dt_patient and get embeddings 
-    demo_embeddings =  dt_patient.core.loc[0, ['anchor_age', 'gender_int', 'ethnicity_int', 'marital_status_int', 'language_int', 'insurance_int']]
+    print(dt_patient.core.columns)
+    demo_embeddings =  dt_patient.core.loc[0, ['anchor_age', 'gender', 'ethnicity', 'marital_status', 'language', 'insurance']]
+    #demo_embeddings =  dt_patient.core.loc[0, ['anchor_age', 'gender_int', 'ethnicity_int', 'marital_status_int', 'language_int', 'insurance_int']]
 
     if verbose >= 1:
         print(demo_embeddings)
@@ -879,7 +889,7 @@ def pivot_chartevent(df, event_list):
 
 def pivot_labevent(df, event_list):
     # create a new table with additional columns with label list  
-    df1 = df[['subject_id', 'hadm_id',  'charttime']] 
+    df1 = df[['subject_id', 'hadm_id', 'charttime']] 
     for event in event_list: 
         df1[event] = np.nan
         #search in the label column 
@@ -1770,7 +1780,7 @@ def build_mimic_cxr_jpg_dataframe(core_mimiciv_imgcxr_path, do_save=False):
 
 
 # LOAD ALL MIMIC IV TABLES IN MEMORY (warning: High memory lengthy process)
-def load_mimiciv(core_mimiciv_path):
+def load_mimiciv(data_path):
     # Inputs:
     #   core_mimiciv_path -> Path to structured MIMIC IV databases in CSV files
     #   filename -> Pickle filename to save object to
@@ -1781,11 +1791,14 @@ def load_mimiciv(core_mimiciv_path):
     ### -> Initializations & Data Loading
     ###    Resources to identify tables and variables of interest can be found in the MIMIC-IV official API (https://mimic-iv.mit.edu/docs/)
     
+    core_mimiciv_path = data_path + 'mimiciv/1.0/'
+    core_mimiciv_imgcxr_path = data_path + '/mimic-cxr-jpg/2.0.0/'
+    
     ## CORE
     df_admissions = dd.read_csv(core_mimiciv_path + 'core/admissions.csv', assume_missing=True, dtype={'admission_location': 'object','deathtime': 'object','edouttime': 'object','edregtime': 'object'})
     df_patients = dd.read_csv(core_mimiciv_path + 'core/patients.csv', assume_missing=True, dtype={'dod': 'object'})  
     df_transfers = dd.read_csv(core_mimiciv_path + 'core/transfers.csv', assume_missing=True, dtype={'careunit': 'object'})
-  
+
     ## HOSP
     df_d_labitems = dd.read_csv(core_mimiciv_path + 'hosp/d_labitems.csv', assume_missing=True, dtype={'loinc_code': 'object'})
     df_d_icd_procedures = dd.read_csv(core_mimiciv_path + 'hosp/d_icd_procedures.csv', assume_missing=True, dtype={'icd_code': 'object', 'icd_version': 'object'})
@@ -1793,42 +1806,42 @@ def load_mimiciv(core_mimiciv_path):
     df_d_hcpcs = dd.read_csv(core_mimiciv_path + 'hosp/d_hcpcs.csv', assume_missing=True, dtype={'category': 'object'})
     df_diagnoses_icd = dd.read_csv(core_mimiciv_path + 'hosp/diagnoses_icd.csv', assume_missing=True, dtype={'icd_code': 'object', 'icd_version': 'object'})
     df_drgcodes = dd.read_csv(core_mimiciv_path + 'hosp/drgcodes.csv', assume_missing=True)
-    df_emar = dd.read_csv(core_mimiciv_path + 'hosp/emar.csv', assume_missing=True)
-    df_emar_detail = dd.read_csv(core_mimiciv_path + 'hosp/emar_detail.csv', assume_missing=True, low_memory=False, dtype={'completion_interval': 'object','dose_due': 'object','dose_given': 'object','infusion_complete': 'object','infusion_rate_adjustment': 'object','infusion_rate_unit': 'object','new_iv_bag_hung': 'object','product_description_other': 'object','reason_for_no_barcode': 'object','restart_interval': 'object','route': 'object','side': 'object','site': 'object','continued_infusion_in_other_location': 'object','infusion_rate': 'object','non_formulary_visual_verification': 'object','prior_infusion_rate': 'object','product_amount_given': 'object', 'infusion_rate_adjustment_amount': 'object'})
-    df_hcpcsevents = dd.read_csv(core_mimiciv_path + 'hosp/hcpcsevents.csv', assume_missing=True, dtype={'hcpcs_cd': 'object'})
-    df_labevents = dd.read_csv(core_mimiciv_path + 'hosp/labevents.csv', assume_missing=True, dtype={'storetime': 'object', 'value': 'object', 'valueuom': 'object', 'flag': 'object', 'priority': 'object', 'comments': 'object'})
-    df_microbiologyevents = dd.read_csv(core_mimiciv_path + 'hosp/microbiologyevents.csv', assume_missing=True, dtype={'comments': 'object', 'quantity': 'object'})
-    df_poe = dd.read_csv(core_mimiciv_path + 'hosp/poe.csv', assume_missing=True, dtype={'discontinue_of_poe_id': 'object','discontinued_by_poe_id': 'object','order_status': 'object'})
-    df_poe_detail = dd.read_csv(core_mimiciv_path + 'hosp/poe_detail.csv', assume_missing=True)
-    df_prescriptions = dd.read_csv(core_mimiciv_path + 'hosp/prescriptions.csv', assume_missing=True, dtype={'form_rx': 'object','gsn': 'object'})
-    df_procedures_icd = dd.read_csv(core_mimiciv_path + 'hosp/procedures_icd.csv', assume_missing=True, dtype={'icd_code': 'object', 'icd_version': 'object'})
-    df_services = dd.read_csv(core_mimiciv_path + 'hosp/services.csv', assume_missing=True, dtype={'prev_service': 'object'})
-  
+    df_emar = dd.read_csv(core_mimiciv_path + 'hosp/emar.csv.gz', assume_missing=True)
+    df_emar_detail = dd.read_csv(core_mimiciv_path + 'hosp/emar_detail.csv.gz', assume_missing=True, low_memory=False, dtype={'completion_interval': 'object','dose_due': 'object','dose_given': 'object','infusion_complete': 'object','infusion_rate_adjustment': 'object','infusion_rate_unit': 'object','new_iv_bag_hung': 'object','product_description_other': 'object','reason_for_no_barcode': 'object','restart_interval': 'object','route': 'object','side': 'object','site': 'object','continued_infusion_in_other_location': 'object','infusion_rate': 'object','non_formulary_visual_verification': 'object','prior_infusion_rate': 'object','product_amount_given': 'object', 'infusion_rate_adjustment_amount': 'object'})
+    df_hcpcsevents = dd.read_csv(core_mimiciv_path + 'hosp/hcpcsevents.csv.gz', assume_missing=True, dtype={'hcpcs_cd': 'object'})
+    df_labevents = dd.read_csv(core_mimiciv_path + 'hosp/labevents.csv.gz', assume_missing=True, dtype={'storetime': 'object', 'value': 'object', 'valueuom': 'object', 'flag': 'object', 'priority': 'object', 'comments': 'object'})
+    df_microbiologyevents = dd.read_csv(core_mimiciv_path + 'hosp/microbiologyevents.csv.gz', assume_missing=True, dtype={'comments': 'object', 'quantity': 'object'})
+    df_poe = dd.read_csv(core_mimiciv_path + 'hosp/poe.csv.gz', assume_missing=True, dtype={'discontinue_of_poe_id': 'object','discontinued_by_poe_id': 'object','order_status': 'object'})
+    df_poe_detail = dd.read_csv(core_mimiciv_path + 'hosp/poe_detail.csv.gz', assume_missing=True)
+    df_prescriptions = dd.read_csv(core_mimiciv_path + 'hosp/prescriptions.csv.gz', assume_missing=True, dtype={'form_rx': 'object','gsn': 'object'})
+    df_procedures_icd = dd.read_csv(core_mimiciv_path + 'hosp/procedures_icd.csv.gz', assume_missing=True, dtype={'icd_code': 'object', 'icd_version': 'object'})
+    df_services = dd.read_csv(core_mimiciv_path + 'hosp/services.csv.gz', assume_missing=True, dtype={'prev_service': 'object'})
+
     ## ICU
-    df_d_items = dd.read_csv(core_mimiciv_path + 'icu/d_items.csv', assume_missing=True)
-    df_procedureevents = dd.read_csv(core_mimiciv_path + 'icu/procedureevents.csv', assume_missing=True, dtype={'value': 'object', 'secondaryordercategoryname': 'object', 'totalamountuom': 'object'})
-    df_outputevents = dd.read_csv(core_mimiciv_path + 'icu/outputevents.csv', assume_missing=True, dtype={'value': 'object'})
-    df_inputevents = dd.read_csv(core_mimiciv_path + 'icu/inputevents.csv', assume_missing=True, dtype={'value': 'object', 'secondaryordercategoryname': 'object', 'totalamountuom': 'object'})
-    df_icustays = dd.read_csv(core_mimiciv_path + 'icu/icustays.csv', assume_missing=True)
-    df_datetimeevents = dd.read_csv(core_mimiciv_path + 'icu/datetimeevents.csv', assume_missing=True, dtype={'value': 'object'})
-    df_chartevents = dd.read_csv(core_mimiciv_path + 'icu/chartevents.csv', assume_missing=True, low_memory=False, dtype={'value': 'object', 'valueuom': 'object'})
-  
+    df_d_items = dd.read_csv(core_mimiciv_path + 'icu/d_items.csv.gz', assume_missing=True)
+    df_procedureevents = dd.read_csv(core_mimiciv_path + 'icu/procedureevents.csv.gz', assume_missing=True, dtype={'value': 'object', 'secondaryordercategoryname': 'object', 'totalamountuom': 'object'})
+    df_outputevents = dd.read_csv(core_mimiciv_path + 'icu/outputevents.csv.gz', assume_missing=True, dtype={'value': 'object'})
+    df_inputevents = dd.read_csv(core_mimiciv_path + 'icu/inputevents.csv.gz', assume_missing=True, dtype={'value': 'object', 'secondaryordercategoryname': 'object', 'totalamountuom': 'object'})
+    df_icustays = dd.read_csv(core_mimiciv_path + 'icu/icustays.csv.gz', assume_missing=True)
+    df_datetimeevents = dd.read_csv(core_mimiciv_path + 'icu/datetimeevents.csv.gz', assume_missing=True, dtype={'value': 'object'})
+    df_chartevents = dd.read_csv(core_mimiciv_path + 'icu/short_chartevents.csv', assume_missing=True, low_memory=True, dtype={'value': 'object', 'valueuom': 'object'})
+
     ## CXR
-    df_mimic_cxr_split = dd.read_csv(core_mimiciv_path + 'mimic-cxr-jpg/2.0.0/mimic-cxr-2.0.0-split.csv', assume_missing=True)
-    df_mimic_cxr_chexpert = dd.read_csv(core_mimiciv_path + 'mimic-cxr-jpg/2.0.0/mimic-cxr-2.0.0-chexpert.csv', assume_missing=True)
+    df_mimic_cxr_split = dd.read_csv(core_mimiciv_imgcxr_path + '/mimic-cxr-2.0.0-split.csv', assume_missing=True)
+    df_mimic_cxr_chexpert = dd.read_csv(core_mimiciv_imgcxr_path + '/mimic-cxr-2.0.0-chexpert.csv', assume_missing=True)
     try:
-        df_mimic_cxr_metadata = dd.read_csv(core_mimiciv_path + 'mimic-cxr-jpg/2.0.0/mimic-cxr-2.0.0-metadata.csv', assume_missing=True, dtype={'dicom_id': 'object'}, blocksize=None)
+        df_mimic_cxr_metadata = dd.read_csv(core_mimiciv_imgcxr_path + '/mimic-cxr-2.0.0-metadata.csv', assume_missing=True, dtype={'dicom_id': 'object'}, blocksize=None)
     except:
-        df_mimic_cxr_metadata = pd.read_csv(core_mimiciv_path + 'mimic-cxr-jpg/2.0.0/mimic-cxr-2.0.0-metadata.csv', dtype={'dicom_id': 'object'})
+        df_mimic_cxr_metadata = pd.read_csv(core_mimiciv_imgcxr_path + '/mimic-cxr-2.0.0-metadata.csv', dtype={'dicom_id': 'object'})
         df_mimic_cxr_metadata = dd.from_pandas(df_mimic_cxr_metadata, npartitions=7)
-    df_mimic_cxr_negbio = dd.read_csv(core_mimiciv_path + 'mimic-cxr-jpg/2.0.0/mimic-cxr-2.0.0-negbio.csv', assume_missing=True)
-  
+    df_mimic_cxr_negbio = dd.read_csv(core_mimiciv_imgcxr_path + '/mimic-cxr-2.0.0-negbio.csv', assume_missing=True)
+
     ## NOTES
-    df_noteevents = dd.from_pandas(pd.read_csv(core_mimiciv_path + 'note/noteevents.csv', dtype={'charttime': 'object', 'storetime': 'object', 'text': 'object'}), chunksize=8)
-    df_dsnotes = dd.from_pandas(pd.read_csv(core_mimiciv_path + 'note/ds_icustay.csv', dtype={'charttime': 'object', 'storetime': 'object', 'text': 'object'}), chunksize=8)
-    df_ecgnotes = dd.from_pandas(pd.read_csv(core_mimiciv_path + 'note/ecg_icustay.csv', dtype={'charttime': 'object', 'storetime': 'object', 'text': 'object'}), chunksize=8)
-    df_echonotes = dd.from_pandas(pd.read_csv(core_mimiciv_path + 'note/echo_icustay.csv', dtype={'charttime': 'object', 'storetime': 'object', 'text': 'object'}), chunksize=8)
-    df_radnotes = dd.from_pandas(pd.read_csv(core_mimiciv_path + 'note/rad_icustay.csv', dtype={'charttime': 'object', 'storetime': 'object', 'text': 'object'}), chunksize=8)
+    #df_noteevents = dd.from_pandas(pd.read_csv(core_mimiciv_path + 'note/noteevents.csv', dtype={'charttime': 'object', 'storetime': 'object', 'text': 'object'}), chunksize=8)
+    #df_dsnotes = dd.from_pandas(pd.read_csv(core_mimiciv_path + 'note/ds_icustay.csv', dtype={'charttime': 'object', 'storetime': 'object', 'text': 'object'}), chunksize=8)
+    #df_ecgnotes = dd.from_pandas(pd.read_csv(core_mimiciv_path + 'note/ecg_icustay.csv', dtype={'charttime': 'object', 'storetime': 'object', 'text': 'object'}), chunksize=8)
+    #df_echonotes = dd.from_pandas(pd.read_csv(core_mimiciv_path + 'note/echo_icustay.csv', dtype={'charttime': 'object', 'storetime': 'object', 'text': 'object'}), chunksize=8)
+    #df_radnotes = dd.from_pandas(pd.read_csv(core_mimiciv_path + 'note/rad_icustay.csv', dtype={'charttime': 'object', 'storetime': 'object', 'text': 'object'}), chunksize=8)
     
     
     ### -> Data Preparation (Create full database in dask format)
@@ -1895,7 +1908,7 @@ def load_mimiciv(core_mimiciv_path):
     df_datetimeevents['storetime'] = dd.to_datetime(df_datetimeevents['storetime'])
     
     df_chartevents['charttime'] = dd.to_datetime(df_chartevents['charttime'])
-    df_chartevents['storetime'] = dd.to_datetime(df_chartevents['storetime'])
+    #df_chartevents['storetime'] = dd.to_datetime(df_chartevents['storetime'])
     
     ## CXR
     if (not 'cxrtime' in df_mimic_cxr_metadata.columns) or (not 'Img_Filename' in df_mimic_cxr_metadata.columns):
@@ -1907,34 +1920,34 @@ def load_mimiciv(core_mimiciv_path):
         df_cxr['StudyTimeForm'] = pd.to_datetime(df_cxr['StudyTimeForm'], format='%H%M%S.%f').dt.time
         df_cxr['cxrtime'] = df_cxr.apply(lambda r : dt.datetime.combine(r['StudyDateForm'],r['StudyTimeForm']),1)
         # Add paths and info to images in cxr
-        df_mimic_cxr_jpg =pd.read_csv(core_mimiciv_path + 'mimic-cxr-jpg/2.0.0/mimic-cxr-2.0.0-jpeg-txt.csv')
-        df_cxr = pd.merge(df_mimic_cxr_jpg, df_cxr, on='dicom_id')
+        #df_mimic_cxr_jpg =pd.read_csv(core_mimiciv_path + 'mimic-cxr-jpg/2.0.0/mimic-cxr-2.0.0-jpeg-txt.csv')
+        #df_cxr = pd.merge(df_mimic_cxr_jpg, df_cxr, on='dicom_id')
         # Save
-        df_cxr.to_csv(core_mimiciv_path + 'mimic-cxr-jpg/2.0.0/mimic-cxr-2.0.0-metadata.csv', index=False)
+        df_cxr.to_csv(core_mimiciv_imgcxr_path + 'mimic-cxr-2.0.0-metadata.csv', index=False)
         #Read back the dataframe
         try:
-            df_mimic_cxr_metadata = dd.read_csv(core_mimiciv_path + 'mimic-cxr-jpg/2.0.0/mimic-cxr-2.0.0-metadata.csv', assume_missing=True, dtype={'dicom_id': 'object', 'Note': 'object'}, blocksize=None)
+            df_mimic_cxr_metadata = dd.read_csv(core_mimiciv_imgcxr_path + 'mimic-cxr-2.0.0-metadata.csv', assume_missing=True, dtype={'dicom_id': 'object', 'Note': 'object'}, blocksize=None)
         except:
-            df_mimic_cxr_metadata = pd.read_csv(core_mimiciv_path + 'mimic-cxr-jpg/2.0.0/mimic-cxr-2.0.0-metadata.csv', dtype={'dicom_id': 'object', 'Note': 'object'})
+            df_mimic_cxr_metadata = pd.read_csv(core_mimiciv_path + 'mimic-cxr-2.0.0-metadata.csv', dtype={'dicom_id': 'object', 'Note': 'object'})
             df_mimic_cxr_metadata = dd.from_pandas(df_mimic_cxr_metadata, npartitions=7)
     df_mimic_cxr_metadata['cxrtime'] = dd.to_datetime(df_mimic_cxr_metadata['cxrtime'])
     
     ## NOTES
-    df_noteevents['chartdate'] = dd.to_datetime(df_noteevents['chartdate'])
-    df_noteevents['charttime'] = dd.to_datetime(df_noteevents['charttime'])
-    df_noteevents['storetime'] = dd.to_datetime(df_noteevents['storetime'])
+    #df_noteevents['chartdate'] = dd.to_datetime(df_noteevents['chartdate'])
+    #df_noteevents['charttime'] = dd.to_datetime(df_noteevents['charttime'])
+    #df_noteevents['storetime'] = dd.to_datetime(df_noteevents['storetime'])
   
-    df_dsnotes['charttime'] = dd.to_datetime(df_dsnotes['charttime'])
-    df_dsnotes['storetime'] = dd.to_datetime(df_dsnotes['storetime'])
+    #df_dsnotes['charttime'] = dd.to_datetime(df_dsnotes['charttime'])
+    #df_dsnotes['storetime'] = dd.to_datetime(df_dsnotes['storetime'])
   
-    df_ecgnotes['charttime'] = dd.to_datetime(df_ecgnotes['charttime'])
-    df_ecgnotes['storetime'] = dd.to_datetime(df_ecgnotes['storetime'])
+    #df_ecgnotes['charttime'] = dd.to_datetime(df_ecgnotes['charttime'])
+    #df_ecgnotes['storetime'] = dd.to_datetime(df_ecgnotes['storetime'])
   
-    df_echonotes['charttime'] = dd.to_datetime(df_echonotes['charttime'])
-    df_echonotes['storetime'] = dd.to_datetime(df_echonotes['storetime'])
+    #df_echonotes['charttime'] = dd.to_datetime(df_echonotes['charttime'])
+    #df_echonotes['storetime'] = dd.to_datetime(df_echonotes['storetime'])
   
-    df_radnotes['charttime'] = dd.to_datetime(df_radnotes['charttime'])
-    df_radnotes['storetime'] = dd.to_datetime(df_radnotes['storetime'])
+    #df_radnotes['charttime'] = dd.to_datetime(df_radnotes['charttime'])
+    #df_radnotes['storetime'] = dd.to_datetime(df_radnotes['storetime'])
     
     
     ### -> SORT data
@@ -1983,15 +1996,15 @@ def load_mimiciv(core_mimiciv_path):
     df_mimic_cxr_negbio = df_mimic_cxr_negbio.compute().sort_values(by=['subject_id'])
     
     ## NOTES
-    print('PROCESSING "NOTES" DB...')
-    df_noteevents = df_noteevents.compute().sort_values(by=['subject_id','hadm_id'])
-    df_dsnotes = df_dsnotes.compute().sort_values(by=['subject_id','hadm_id','stay_id'])
-    df_ecgnotes = df_ecgnotes.compute().sort_values(by=['subject_id','hadm_id','stay_id'])
-    df_echonotes = df_echonotes.compute().sort_values(by=['subject_id','hadm_id','stay_id'])
-    df_radnotes = df_radnotes.compute().sort_values(by=['subject_id','hadm_id','stay_id'])
+    #print('PROCESSING "NOTES" DB...')
+    #df_noteevents = df_noteevents.compute().sort_values(by=['subject_id','hadm_id'])
+    #df_dsnotes = df_dsnotes.compute().sort_values(by=['subject_id','hadm_id','stay_id'])
+    #df_ecgnotes = df_ecgnotes.compute().sort_values(by=['subject_id','hadm_id','stay_id'])
+    #df_echonotes = df_echonotes.compute().sort_values(by=['subject_id','hadm_id','stay_id'])
+    #df_radnotes = df_radnotes.compute().sort_values(by=['subject_id','hadm_id','stay_id'])
     
     # Return
-    return df_admissions, df_patients, f_transfers, df_diagnoses_icd, df_drgcodes, df_emar, df_emar_detail, df_hcpcsevents, df_labevents, df_microbiologyevents, df_poe, df_poe_detail, df_prescriptions, df_procedures_icd, df_services, df_d_icd_diagnoses, df_d_icd_procedures, df_d_hcpcs, df_d_labitem, df_procedureevents, df_outputevents, df_inputevents, df_icustays, df_datetimeevents, df_chartevents, df_d_items, df_mimic_cxr_split, df_mimic_cxr_chexpert, df_mimic_cxr_metadata, df_mimic_cxr_negbio, df_noteevents, df_dsnotes, df_ecgnotes, df_echonotes, df_radnotes
+    return df_admissions, df_patients, df_transfers, df_diagnoses_icd, df_drgcodes, df_emar, df_emar_detail, df_hcpcsevents, df_labevents, df_microbiologyevents, df_poe, df_poe_detail, df_prescriptions, df_procedures_icd, df_services, df_d_icd_diagnoses, df_d_icd_procedures, df_d_hcpcs, df_d_labitems, df_procedureevents, df_outputevents, df_inputevents, df_icustays, df_datetimeevents, df_chartevents, df_d_items, df_mimic_cxr_split, df_mimic_cxr_chexpert, df_mimic_cxr_metadata, df_mimic_cxr_negbio#, df_noteevents, df_dsnotes, df_ecgnotes, df_echonotes, df_radnotes
 
 
 # GET LIST OF ALL UNIQUE ID COMBINATIONS IN MIMIC-IV (subject_id, hadm_id, stay_id)
@@ -2086,17 +2099,20 @@ def generate_all_mimiciv_patient_object(df_haim_ids, core_mimiciv_path):
     
     # Extract information for patient
     nfiles = len(df_haim_ids)
-    with tqdm(total = nfiles) as pbar:
+    with tqdm(total = nfiles) as pbar: # progress bar
         #Iterate through all patients
         for haim_patient_idx in range(nfiles):
             # Let's select each single patient and extract patient object
             start_hr = None # Select timestamps
             end_hr = None   # Select timestamps
-            key_subject_id, key_hadm_id, key_stay_id, patient, dt_patient = extract_single_patient_records_mimiciv(haim_patient_idx, df_haim_ids, start_hr, end_hr)
             
-            # Save
+            # import os
             filename = f"{haim_patient_idx:08d}" + '.pkl'
-            save_patient_object(dt_patient, core_mimiciv_path + 'pickle/' + filename)
+            filepath = core_mimiciv_path + 'pickle/' + filename
+            if not os.path.exists(filepath):
+                # Save
+                key_subject_id, key_hadm_id, key_stay_id, patient, dt_patient = extract_single_patient_records_mimiciv(haim_patient_idx, df_haim_ids, start_hr, end_hr)
+                save_patient_object(dt_patient, core_mimiciv_path + 'pickle/' + filename)
             # Update process bar
             pbar.update(1)
     return nfiles

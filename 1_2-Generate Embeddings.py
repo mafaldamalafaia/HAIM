@@ -30,8 +30,8 @@ warnings.filterwarnings("ignore", category=RuntimeWarning)
 import gc
 
 # Full Core MIMIC-IV database path
-core_mimiciv_path = 'data/'
-df_haim_ids = pd.read_csv(core_mimiciv_path + 'pickle/haim_mimiciv_key_ids.csv')
+core_mimiciv_path = '/export/scratch2/constellation-data/malafaia/physionet.org/files/mimiciv/1.0/'#'data/'
+df_haim_ids = pd.read_csv(core_mimiciv_path + 'haim_mimiciv_key_ids.csv')
 # Get Key dictionary
 df_patientevents_categorylabels_dict = load_haim_event_dictionaries(core_mimiciv_path)
 # Get core data
@@ -42,53 +42,60 @@ def process_cxr_embeddings_haim_id(haim_id, dt_patient, df_init):
     # DEMOGRAPHICS EMBEDDINGS EXTRACTION
     demo_embeddings = get_demographic_embeddings(dt_patient, verbose=0)
     gc.collect() #Clear memory
+    print("demo embeddings done")
     
     # Time Series (TSFRESH-like) CHARTEVENT & LABEVENT EMBEDDINGS EXTRACTION
-    aggregated_ts_ce_embeddings = get_ts_embeddings(dt_patient, event_type = 'chart')
-    gc.collect() #Clear memory
+    #aggregated_ts_ce_embeddings = get_ts_embeddings(dt_patient, event_type = 'chart')
+    #gc.collect() #Clear memory
+    #print("chart ts embeddings done")
     
-    aggregated_ts_le_embeddings = get_ts_embeddings(dt_patient, event_type = 'lab')
-    gc.collect() #Clear memory
+    #aggregated_ts_le_embeddings = get_ts_embeddings(dt_patient, event_type = 'lab')
+    #gc.collect() #Clear memory
+    #print("lab ts embeddings done")
     
-    aggregated_ts_pe_embeddings = get_ts_embeddings(dt_patient, event_type = 'procedure')
-    gc.collect() #Clear memory
+    #aggregated_ts_pe_embeddings = get_ts_embeddings(dt_patient, event_type = 'procedure')
+    #gc.collect() #Clear memory
+    #print("procedure ts embeddings done")
     
     # CHEST XRAY VISION EMBEDDINGS EXTRACTION
     aggregated_densefeature_embeddings, _, aggregated_prediction_embeddings, _, _ = get_chest_xray_embeddings(dt_patient, verbose=0)
     gc.collect() #Clear memory
+    print("cxr aggregated embeddings done")
     
     # NOTES FROM ECGs
-    aggregated_ecg_embeddings = get_notes_biobert_embeddings(patient, note_type = 'ecgnotes')
-    gc.collect() #Clear memory
+    #aggregated_ecg_embeddings = get_notes_biobert_embeddings(patient, note_type = 'ecgnotes')
+    #gc.collect() #Clear memory
     
     # NOTES FROM ECOCARDIOGRAMs
-    aggregated_echo_embeddings = get_notes_biobert_embeddings(patient, note_type = 'echonotes')
-    gc.collect() #Clear memory
+    #aggregated_echo_embeddings = get_notes_biobert_embeddings(patient, note_type = 'echonotes')
+    #gc.collect() #Clear memory
     
     # NOTES FROM RADIOLOGY
-    aggregated_rad_embeddings = get_notes_biobert_embeddings(patient, note_type = 'radnotes')
-    gc.collect() #Clear memory
+    #aggregated_rad_embeddings = get_notes_biobert_embeddings(patient, note_type = 'radnotes')
+    #gc.collect() #Clear memory
 
     # CHEST XRAY VISION SINGLE-IMAGE EMBEDDINGS EXTRACTION
     print('getting xray')
+    print("IDX -> ", idx)
     img = df_imcxr[idx]
     densefeature_embeddings, prediction_embeddings = get_single_chest_xray_embeddings(img)
     gc.collect() #Clear memory
+    print("cxr single embeddings done")
 
-    # Create Dataframes filteed by ordered sample number for Fusion
+    # Create Dataframes filtered by ordered sample number for Fusion
     df_haim_ids_fusion = pd.DataFrame([haim_id],columns=['haim_id'])
     df_demographics_embeddings_fusion = pd.DataFrame(demo_embeddings.reshape(1,-1), columns=['de_'+str(i) for i in range(demo_embeddings.shape[0])])
-    df_ts_ce_embeddings_fusion = pd.DataFrame(aggregated_ts_ce_embeddings.values.reshape(1,-1), columns=['ts_ce_'+str(i) for i in range(aggregated_ts_ce_embeddings.values.shape[0])])
-    df_ts_le_embeddings_fusion = pd.DataFrame(aggregated_ts_le_embeddings.values.reshape(1,-1), columns=['ts_le_'+str(i) for i in range(aggregated_ts_le_embeddings.values.shape[0])])
-    df_ts_pe_embeddings_fusion = pd.DataFrame(aggregated_ts_pe_embeddings.values.reshape(1,-1), columns=['ts_pe_'+str(i) for i in range(aggregated_ts_pe_embeddings.values.shape[0])])
+    #df_ts_ce_embeddings_fusion = pd.DataFrame(aggregated_ts_ce_embeddings.values.reshape(1,-1), columns=['ts_ce_'+str(i) for i in range(aggregated_ts_ce_embeddings.values.shape[0])])
+    #df_ts_le_embeddings_fusion = pd.DataFrame(aggregated_ts_le_embeddings.values.reshape(1,-1), columns=['ts_le_'+str(i) for i in range(aggregated_ts_le_embeddings.values.shape[0])])
+    #df_ts_pe_embeddings_fusion = pd.DataFrame(aggregated_ts_pe_embeddings.values.reshape(1,-1), columns=['ts_pe_'+str(i) for i in range(aggregated_ts_pe_embeddings.values.shape[0])])
     
     df_vision_dense_embeddings_fusion = pd.DataFrame(densefeature_embeddings.reshape(1,-1), columns=['vd_'+str(i) for i in range(densefeature_embeddings.shape[0])])
     df_vision_predictions_embeddings_fusion = pd.DataFrame(prediction_embeddings.reshape(1,-1), columns=['vp_'+str(i) for i in range(prediction_embeddings.shape[0])])
     df_vision_multi_dense_embeddings_fusion = pd.DataFrame(aggregated_densefeature_embeddings.reshape(1,-1), columns=['vmd_'+str(i) for i in range(aggregated_densefeature_embeddings.shape[0])])
     df_vision_multi_predictions_embeddings_fusion = pd.DataFrame(aggregated_prediction_embeddings.reshape(1,-1), columns=['vmp_'+str(i) for i in range(aggregated_prediction_embeddings.shape[0])])
-    df_ecgnotes_embeddings_fusion = pd.DataFrame(aggregated_ecg_embeddings.reshape(1,-1), columns=['n_ecg_'+str(i) for i in range(aggregated_ecg_embeddings.shape[0])])
-    df_echonotes_embeddings_fusion = pd.DataFrame(aggregated_echo_embeddings.reshape(1,-1), columns=['n_ech_'+str(i) for i in range(aggregated_echo_embeddings.shape[0])])
-    df_radnotes_embeddings_fusion = pd.DataFrame(aggregated_rad_embeddings.reshape(1,-1), columns=['n_rad_'+str(i) for i in range(aggregated_rad_embeddings.shape[0])])
+    #df_ecgnotes_embeddings_fusion = pd.DataFrame(aggregated_ecg_embeddings.reshape(1,-1), columns=['n_ecg_'+str(i) for i in range(aggregated_ecg_embeddings.shape[0])])
+    #df_echonotes_embeddings_fusion = pd.DataFrame(aggregated_echo_embeddings.reshape(1,-1), columns=['n_ech_'+str(i) for i in range(aggregated_echo_embeddings.shape[0])])
+    #df_radnotes_embeddings_fusion = pd.DataFrame(aggregated_rad_embeddings.reshape(1,-1), columns=['n_rad_'+str(i) for i in range(aggregated_rad_embeddings.shape[0])])
     
     # Vision targets
     cxr_target_columns = ['split','Atelectasis','Cardiomegaly','Consolidation','Edema','Enlarged Cardiomediastinum','Fracture','Lung Lesion','Lung Opacity','No Finding','Pleural Effusion','Pleural Other','Pneumonia','Pneumothorax','Support Devices', 'PerformedProcedureStepDescription','ViewPosition']
@@ -102,12 +109,12 @@ def process_cxr_embeddings_haim_id(haim_id, dt_patient, df_init):
     df_fusion = pd.concat([df_fusion, df_vision_predictions_embeddings_fusion], axis=1)
     df_fusion = pd.concat([df_fusion, df_vision_multi_dense_embeddings_fusion], axis=1)
     df_fusion = pd.concat([df_fusion, df_vision_multi_predictions_embeddings_fusion], axis=1)
-    df_fusion = pd.concat([df_fusion, df_ts_ce_embeddings_fusion], axis=1)
-    df_fusion = pd.concat([df_fusion, df_ts_le_embeddings_fusion], axis=1)
-    df_fusion = pd.concat([df_fusion, df_ts_pe_embeddings_fusion], axis=1)
-    df_fusion = pd.concat([df_fusion, df_ecgnotes_embeddings_fusion], axis=1)
-    df_fusion = pd.concat([df_fusion, df_echonotes_embeddings_fusion], axis=1)
-    df_fusion = pd.concat([df_fusion, df_radnotes_embeddings_fusion], axis=1)
+    #df_fusion = pd.concat([df_fusion, df_ts_ce_embeddings_fusion], axis=1)
+    #df_fusion = pd.concat([df_fusion, df_ts_le_embeddings_fusion], axis=1)
+    #df_fusion = pd.concat([df_fusion, df_ts_pe_embeddings_fusion], axis=1)
+    #df_fusion = pd.concat([df_fusion, df_ecgnotes_embeddings_fusion], axis=1)
+    #df_fusion = pd.concat([df_fusion, df_echonotes_embeddings_fusion], axis=1)
+    #df_fusion = pd.concat([df_fusion, df_radnotes_embeddings_fusion], axis=1)
     
     #Add targets
     df_fusion = pd.concat([df_fusion, df_vision_targets_fusion], axis=1)
@@ -115,25 +122,31 @@ def process_cxr_embeddings_haim_id(haim_id, dt_patient, df_init):
     
     return df_fusion
 
+print("HELLO WORLD")
 
 # Clean out process bar before starting
 sys.stdout.flush()
+print("HELLO WORLD")
 
 # Define inclusion criteria
 inclusion_criteria =[[''], ['']]
+print("HELLO WORLD")
 
 # Supply the haim id patient you would like to process
-haim_id = n
+haim_id = 1392
 # Supply name of file of which you would like to save all embeddings in
-fname = filenmae
+fname = '/export/scratch2/constellation-data/malafaia/physionet.org/files/mimiciv/1.0/embeddings_patient3.csv'
+print("HELLO WORLD")
 
 # Let's select a single HAIM Patient from pickle files and check if it fits inclusion criteria
 haim_patient_idx = haim_id
+print("HELLO WORLD")
 
 #Load precomputed file
 filename = f"{haim_patient_idx:08d}" + '.pkl'
-folder = f"{haim_patient_idx:05d}"[:2] + "/"
-patient = load_patient_object(core_mimiciv_path + 'pickle/folder' + folder + filename)
+#folder = f"{haim_patient_idx:05d}"[:2] + "/"
+patient = load_patient_object(core_mimiciv_path + 'pickle/' + filename)
+print("HELLO WORLD")
 
 # Get information of chest x-rays conducted within this patiewnt stay
 df_cxr = patient.cxr
@@ -141,15 +154,24 @@ df_imcxr = patient.imcxr
 admittime = patient.admissions.admittime.values[0]
 dischtime = patient.admissions.dischtime.values[0]
 df_stay_cxr = df_cxr.loc[(df_cxr['charttime'] >= admittime) & (df_cxr['charttime'] <= dischtime)]
+print("HELLO WORLD")
+print("admittime: ", admittime)
+print("dischtime: ", dischtime)
+print("charttime: ", df_cxr['charttime'])
+print(df_stay_cxr)
 
 if not df_stay_cxr.empty:
+    print("df_stay_cxr not empty!")
     for idx, df_stay_cxr_row in df_stay_cxr.iterrows():
         # Get stay anchor times
         img_charttime = df_stay_cxr_row['charttime']
         img_deltacharttime = df_stay_cxr_row['deltacharttime']
+        print('charttime: ', img_charttime)
+        print('deltacharttime: ', img_deltacharttime)
 
         # Get time to discharge and discharge location/status
         img_id = df_stay_cxr_row["dicom_id"]
+        print("img_id: ", img_id)
         img_length_of_stay = date_diff_hrs(dischtime, img_charttime)
         discharge_location = patient.core['discharge_location'][0]
         if discharge_location == "DIED": death_status = 1
@@ -159,16 +181,21 @@ if not df_stay_cxr.empty:
         start_hr = None
         end_hr = img_deltacharttime
         
-        patient = load_patient_object(core_mimiciv_path + 'pickle/folder' + folder + filename)
+        patient = load_patient_object(core_mimiciv_path + 'pickle/' + filename)
+        print("loaded patient info!")
         dt_patient = get_timebound_patient_icustay(patient, start_hr , end_hr)
+        print("patient icustay: ", dt_patient.cxr)
         is_included = True
 
         if is_included:
+            print("patient is included!")
             df_init = pd.DataFrame([[img_id, img_charttime, img_deltacharttime, discharge_location, img_length_of_stay, death_status]],columns=['img_id', 'img_charttime', 'img_deltacharttime', 'discharge_location', 'img_length_of_stay', 'death_status'])
+            print("starting embeddings...")
             df_fusion = process_cxr_embeddings_haim_id(haim_id, dt_patient, df_init)
+            print("finished embeddings!")
             
             if os.path.isfile(fname):
-                df_fusion.to_csv(fname, mode='a', index=False, header=False)
+                df_fusion.to_csv(fname, mode='a', index=False, header=False) # append
             else:
                 df_fusion.to_csv(fname, mode='w', index=False)
                 
