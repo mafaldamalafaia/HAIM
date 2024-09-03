@@ -92,7 +92,7 @@ class ActivationWithReshape(nn.Module):
         x = nn.AdaptiveAvgPool2d(1)(x)
         x = x.view(x.size(0), -1)
         return x
-
+    
 class img_net(nn.Module):
     def __init__(self, z=64, IMG_FTS=1):
         super().__init__()
@@ -110,7 +110,7 @@ class img_net(nn.Module):
         
         # add fc layer to predict single output
         self.classifier = nn.Sequential(
-            nn.Linear(z, IMG_FTS),
+            nn.Linear(n_ftrs, IMG_FTS),
             nn.Sigmoid()
         )
         
@@ -176,8 +176,9 @@ class fusion_net(nn.Module):
         """ IMG """
         z_img = config['img_ftrs']
         self.cnn = img_net()
+        n_ftrs = 1024 # hard-coded
         self.cnn.classifier = nn.Sequential(
-            nn.Linear(z, z_img)
+            nn.Linear(n_ftrs, z_img)
         )
         
         """ TAB """
@@ -238,16 +239,11 @@ for j in range(len(lrs)):
             
             model = fusion_net(nas, True)
             model.to(device)
-            # freeze ft engineering blocks
-            tab_wts = torch.load('/export/scratch1/home/malafaia/HAIM/mm/saved_models/tab_' + str(i) + '.pth')
-            mlp_wts = {k: v for k, v in tab_wts.items() if not k.startswith('classifier')}
-            model.mlp.load_state_dict(mlp_wts, strict=False)
-            for param in model.cnn.dense_fts.parameters():
-                param.requires_grad = False
-            for param in model.mlp.fc1.parameters():
-                param.requires_grad = False
-            for param in model.mlp.fc2.parameters():
-                param.requires_grad = False
+            # freeze img ?
+            freeze_img = True
+            if freeze_img:
+                for param in model.cnn.dense_fts.parameters():
+                    param.requires_grad = False
             
             loss_fn = nn.BCELoss()
             optim = torch.optim.Adam(model.parameters(), lr=LR, weight_decay=WD)
@@ -288,7 +284,9 @@ best_wd = best_params['WD']
 # get df with best hyperparameters
 best_models_df = test_results[(test_results['LR']==best_lr) & (test_results['WD']==best_wd)]
 
-save_dir = '/export/scratch1/home/malafaia/HAIM/mm/saved_models/fusion_'
+if freeze_img: save_dir = '/export/scratch1/home/malafaia/HAIM/mm/saved_models/fusion_freeze_img_'
+else: save_dir = '/export/scratch1/home/malafaia/HAIM/mm/saved_models/fusion_'
+
 # save each model
 for idx, row in best_models_df.iterrows():
     print("model no. ", idx)

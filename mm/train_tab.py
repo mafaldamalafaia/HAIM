@@ -95,32 +95,33 @@ class tab_net(nn.Module):
             nn.Linear(128, z),
             nn.BatchNorm1d(z),
             nn.ReLU())
-        self.fc3 = nn.Sequential(
+        self.classifier = nn.Sequential(
             nn.Linear(z,TAB_FTS),
             nn.Sigmoid())
     
     def forward(self, img, x):
         x = self.fc1(x)
         x = self.fc2(x)
-        x = self.fc3(x)
+        x = self.classifier(x)
         return x
 
 ################################################################################
 ################################################################################
 
+nas = {"img_ftrs": 1, "tab_ftrs": 1}
 
 TARGET = 'Consolidation'
 info = pd.read_csv('/export/scratch2/constellation-data/malafaia/physionet.org/files/haim-mm-mafi/consolidation_ids.csv')
 print("____________________Running experiments on ", TARGET, " prediction____________________")
 
-device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
+device = torch.device('cuda:0') if torch.cuda.is_available() else torch.device('cpu')
+print("device: ", device)
 
 # change to hpo grid
 lrs = [1e-3, 1e-4, 1e-5]
 wds = [0.001, 0.0001, 0]
 
 test_results = pd.DataFrame(columns=['LR', 'WD', 'Fold', 'BCEloss', 'AUROC', 'BAcc', 'model'])
-#models = np.zeros([5,len(lrs),len(wds)])
 
 # iterate over lrs
 for j in range(len(lrs)):
